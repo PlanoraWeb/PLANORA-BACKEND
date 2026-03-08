@@ -38,7 +38,8 @@ model Role {
 
 model User {
   id        String   @id @default(uuid())
-  name      String
+  firstName String
+  lastName  String
   email     String   @unique
   password  String
   roleId    String
@@ -110,6 +111,7 @@ model Task {
   assigneeId  String?
   dueDate     DateTime?
   createdAt   DateTime     @default(now())
+  order       Int          @default(0)
   updatedAt   DateTime     @updatedAt
 
   status   TaskStatus @relation(fields: [statusId], references: [id])

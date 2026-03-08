@@ -6,7 +6,8 @@ export class UserService {
         return prisma.user.findMany({
             select: {
                 id: true,
-                name: true,
+                firstName: true,
+                lastName: true,
                 email: true,
                 role: { select: { id: true, name: true } },
                 createdAt: true,
@@ -20,7 +21,8 @@ export class UserService {
             where: { id },
             select: {
                 id: true,
-                name: true,
+                firstName: true,
+                lastName: true,
                 email: true,
                 role: { select: { id: true, name: true } },
                 createdAt: true,
@@ -29,7 +31,7 @@ export class UserService {
         });
 
         if (!user) {
-            throw new AppError('Kullanıcı bulunamadı', 404);
+            throw new AppError('Kullanıcı bulunamadı', 404, 'NOT_FOUND');
         }
 
         return user;

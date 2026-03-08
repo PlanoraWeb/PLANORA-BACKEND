@@ -1,33 +1,34 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema } from 'zod';
-import { AppError } from '../utils/AppError';
+import { ZodObject, ZodError } from 'zod';
 
 /**
  * Zod şemasıyla gelen isteği doğrulayan middleware.
- * body, query ve params ayrı ayrı doğrulanabilir.
+ * Schema z.object({ body, query, params }) formatında olmalıdır.
  */
-export const validate = (schema: {
-    body?: ZodSchema;
-    query?: ZodSchema;
-    params?: ZodSchema;
-}) => {
-    return (req: Request, _res: Response, next: NextFunction) => {
+export const validate = (schema: ZodObject) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            if (schema.body) {
-                req.body = schema.body.parse(req.body);
+            await schema.parseAsync({
+                body: req.body,
+                query: req.query,
+                params: req.params,
+            });
+            return next();
+        } catch (error) {
+            if (error instanceof ZodError) {
+                return res.status(400).json({
+                    success: false,
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        message: 'Gönderilen veriler kurallara uymuyor.',
+                        details: error.issues.map((e) => ({
+                            field: e.path.join('.'),
+                            message: e.message,
+                        })),
+                    },
+                });
             }
-            if (schema.query) {
-                req.query = schema.query.parse(req.query) as any;
-            }
-            if (schema.params) {
-                req.params = schema.params.parse(req.params) as any;
-            }
-            next();
-        } catch (err: any) {
-            const message =
-                err.errors?.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ') ||
-                'Validation failed';
-            next(new AppError(message, 400));
+            return next(error);
         }
     };
 };

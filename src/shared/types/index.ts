@@ -1,2 +1,2 @@
 export { AuthRequest } from './AuthRequest';
-export { ApiResponse, PaginatedResponse } from './ApiResponse';
+export { ApiResponse, ApiErrorResponse, PaginationMeta } from './ApiResponse';

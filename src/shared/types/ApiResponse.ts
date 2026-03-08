@@ -1,20 +1,33 @@
 /**
- * Tüm API yanıtları için standart yanıt formatı.
+ * Standart başarılı API yanıt formatı.
  */
 export interface ApiResponse<T = any> {
-    status: 'success' | 'error';
-    message?: string;
-    data?: T;
+    success: true;
+    data: T;
+    meta: {
+        timestamp: string;
+        [key: string]: any;
+    };
 }
 
 /**
- * Sayfalama (pagination) bilgisi taşıyan yanıt formatı.
+ * Standart hata API yanıt formatı.
  */
-export interface PaginatedResponse<T = any> extends ApiResponse<T> {
-    meta?: {
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
+export interface ApiErrorResponse {
+    success: false;
+    error: {
+        code: string;
+        message: string;
+        details?: Array<{ field: string; message: string }>;
     };
+}
+
+/**
+ * Sayfalama bilgisi taşıyan meta verisi.
+ */
+export interface PaginationMeta {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
 }

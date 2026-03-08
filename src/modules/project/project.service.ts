@@ -1,13 +1,13 @@
 import prisma from '../../shared/utils/prisma';
 import { AppError } from '../../shared/utils/AppError';
-import { CreateProjectInput, UpdateProjectInput, AddMemberInput } from './project.validation';
+import { CreateProjectDto, UpdateProjectDto, AddProjectMemberDto } from './project.validation';
 
 export class ProjectService {
-    async create(data: CreateProjectInput, userId: string) {
+    async create(data: CreateProjectDto, userId: string) {
         // Proje oluştur
         const project = await prisma.project.create({
             data: {
-                projectName: data.projectName,
+                projectName: data.name,
                 description: data.description,
                 createdById: userId,
             },
@@ -30,9 +30,9 @@ export class ProjectService {
 
         // Varsayılan kanban kolonlarını oluştur
         const defaultStatuses = [
-            { name: 'Yapılacaklar', position: 0, isDefault: true },
-            { name: 'Devam Ediyor', position: 1, isDefault: false },
-            { name: 'Tamamlandı', position: 2, isDefault: false },
+            { name: 'TODO', position: 0, isDefault: true },
+            { name: 'IN_PROGRESS', position: 1, isDefault: false },
+            { name: 'DONE', position: 2, isDefault: false },
         ];
 
         await prisma.taskStatus.createMany({
@@ -51,7 +51,13 @@ export class ProjectService {
                 members: { some: { userId } },
             },
             include: {
-                createdBy: { select: { id: true, name: true, email: true } },
+                createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+                members: {
+                    include: {
+                        user: { select: { id: true, firstName: true, lastName: true } },
+                        role: { select: { name: true } },
+                    },
+                },
                 _count: { select: { members: true, tasks: true } },
             },
             orderBy: { createdAt: 'desc' },
@@ -62,10 +68,10 @@ export class ProjectService {
         const project = await prisma.project.findUnique({
             where: { id },
             include: {
-                createdBy: { select: { id: true, name: true, email: true } },
+                createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
                 members: {
                     include: {
-                        user: { select: { id: true, name: true, email: true } },
+                        user: { select: { id: true, firstName: true, lastName: true, email: true } },
                         role: { select: { id: true, name: true } },
                     },
                 },
@@ -75,18 +81,21 @@ export class ProjectService {
         });
 
         if (!project) {
-            throw new AppError('Proje bulunamadı', 404);
+            throw new AppError('Proje bulunamadı', 404, 'NOT_FOUND');
         }
 
         return project;
     }
 
-    async update(id: string, data: UpdateProjectInput) {
-        await this.findById(id); // Var mı kontrol et
+    async update(id: string, data: UpdateProjectDto) {
+        await this.findById(id);
 
         return prisma.project.update({
             where: { id },
-            data,
+            data: {
+                ...(data.name && { projectName: data.name }),
+                ...(data.description !== undefined && { description: data.description }),
+            },
         });
     }
 
@@ -95,7 +104,7 @@ export class ProjectService {
         return prisma.project.delete({ where: { id } });
     }
 
-    async addMember(projectId: string, data: AddMemberInput) {
+    async addMember(projectId: string, data: AddProjectMemberDto) {
         await this.findById(projectId);
 
         const existing = await prisma.projectMember.findUnique({
@@ -103,17 +112,26 @@ export class ProjectService {
         });
 
         if (existing) {
-            throw new AppError('Kullanıcı zaten bu projenin üyesi', 409);
+            throw new AppError('Kullanıcı zaten bu projenin üyesi', 409, 'CONFLICT');
+        }
+
+        // Role name'den roleId'yi bul
+        const role = await prisma.role.findFirst({
+            where: { name: data.role === 'PROJECT_ADMIN' ? 'Project Admin' : 'Member' },
+        });
+
+        if (!role) {
+            throw new AppError('Belirtilen rol bulunamadı', 404, 'NOT_FOUND');
         }
 
         return prisma.projectMember.create({
             data: {
                 projectId,
                 userId: data.userId,
-                roleId: data.roleId,
+                roleId: role.id,
             },
             include: {
-                user: { select: { id: true, name: true, email: true } },
+                user: { select: { id: true, firstName: true, lastName: true, email: true } },
                 role: { select: { id: true, name: true } },
             },
         });
@@ -125,7 +143,7 @@ export class ProjectService {
         });
 
         if (!member) {
-            throw new AppError('Kullanıcı bu projenin üyesi değil', 404);
+            throw new AppError('Kullanıcı bu projenin üyesi değil', 404, 'NOT_FOUND');
         }
 
         return prisma.projectMember.delete({

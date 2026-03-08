@@ -8,13 +8,13 @@ const router = Router();
 
 router.post(
     '/register',
-    validate({ body: registerSchema }),
+    validate(registerSchema),
     asyncHandler(authController.register),
 );
 
 router.post(
     '/login',
-    validate({ body: loginSchema }),
+    validate(loginSchema),
     asyncHandler(authController.login),
 );
 

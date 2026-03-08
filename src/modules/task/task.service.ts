@@ -1,9 +1,9 @@
 import prisma from '../../shared/utils/prisma';
 import { AppError } from '../../shared/utils/AppError';
-import { CreateTaskInput, UpdateTaskInput } from './task.validation';
+import { CreateTaskDto, UpdateTaskDto, UpdateTaskStatusDto } from './task.validation';
 
 export class TaskService {
-    async create(projectId: string, reporterId: string, data: CreateTaskInput) {
+    async create(projectId: string, reporterId: string, data: CreateTaskDto) {
         return prisma.task.create({
             data: {
                 title: data.title,
@@ -18,8 +18,8 @@ export class TaskService {
             },
             include: {
                 status: true,
-                reporter: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
+                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
         });
     }
@@ -29,10 +29,10 @@ export class TaskService {
             where: { projectId },
             include: {
                 status: true,
-                reporter: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
+                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: [{ status: { position: 'asc' } }, { order: 'asc' }, { createdAt: 'desc' }],
         });
     }
 
@@ -42,19 +42,19 @@ export class TaskService {
             include: {
                 status: true,
                 project: { select: { id: true, projectName: true } },
-                reporter: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
+                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
         });
 
         if (!task) {
-            throw new AppError('Görev bulunamadı', 404);
+            throw new AppError('Görev bulunamadı', 404, 'NOT_FOUND');
         }
 
         return task;
     }
 
-    async update(id: string, data: UpdateTaskInput) {
+    async update(id: string, data: UpdateTaskDto) {
         await this.findById(id);
 
         return prisma.task.update({
@@ -65,8 +65,8 @@ export class TaskService {
             },
             include: {
                 status: true,
-                reporter: { select: { id: true, name: true, email: true } },
-                assignee: { select: { id: true, name: true, email: true } },
+                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
         });
     }
@@ -76,12 +76,30 @@ export class TaskService {
         return prisma.task.delete({ where: { id } });
     }
 
-    async changeStatus(id: string, statusId: string) {
+    async changeStatus(id: string, data: UpdateTaskStatusDto) {
         await this.findById(id);
+
+        // Status name'den statusId'yi bul (görevin ait olduğu projede)
+        const task = await prisma.task.findUnique({ where: { id }, select: { projectId: true } });
+        const status = await prisma.taskStatus.findFirst({
+            where: { projectId: task!.projectId, name: data.status },
+        });
+
+        if (!status) {
+            throw new AppError('Belirtilen durum bu projede bulunamadı', 404, 'NOT_FOUND');
+        }
+
         return prisma.task.update({
             where: { id },
-            data: { statusId },
-            include: { status: true },
+            data: {
+                statusId: status.id,
+                order: data.newOrder,
+            },
+            include: {
+                status: true,
+                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
+            },
         });
     }
 
@@ -91,7 +109,7 @@ export class TaskService {
             where: { id },
             data: { assigneeId },
             include: {
-                assignee: { select: { id: true, name: true, email: true } },
+                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
         });
     }

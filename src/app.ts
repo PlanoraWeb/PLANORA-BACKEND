@@ -24,22 +24,31 @@ app.use(morgan('dev'));
 // ─── Health Check ─────────────────────────────────────────────────
 app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({
-        status: 'OK',
-        message: 'Planora API is running',
-        timestamp: new Date().toISOString(),
+        success: true,
+        data: {
+            status: 'OK',
+            message: 'Planora API is running',
+        },
+        meta: { timestamp: new Date().toISOString() },
     });
 });
 
-// ─── API Routes (Modüler Monolitik) ──────────────────────────────
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/task-statuses', taskStatusRoutes);
+// ─── API Routes v1 (Modüler Monolitik) ───────────────────────────
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/tasks', taskRoutes);
+app.use('/api/v1/task-statuses', taskStatusRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
-    res.status(404).json({ status: 'Error', message: 'Route not found' });
+    res.status(404).json({
+        success: false,
+        error: {
+            code: 'NOT_FOUND',
+            message: 'İstenen kaynak bulunamadı',
+        },
+    });
 });
 
 // ─── Global Error Handler ─────────────────────────────────────────
