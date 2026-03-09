@@ -1,12 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 // ─── Enums ────────────────────────────────────────────────────────
@@ -51,6 +49,7 @@ model User {
   memberships     ProjectMember[]
   assignedTasks   Task[]          @relation("Assignee")
   reportedTasks   Task[]          @relation("Reporter")
+  refreshTokens   RefreshToken[]
 
   @@map("users")
 }
@@ -63,10 +62,10 @@ model Project {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy  User            @relation("CreatedProjects", fields: [createdById], references: [id])
-  members    ProjectMember[]
-  statuses   TaskStatus[]
-  tasks      Task[]
+  createdBy User            @relation("CreatedProjects", fields: [createdById], references: [id])
+  members   ProjectMember[]
+  statuses  TaskStatus[]
+  tasks     Task[]
 
   @@map("projects")
 }
@@ -120,4 +119,17 @@ model Task {
   assignee User?      @relation("Assignee", fields: [assigneeId], references: [id])
 
   @@map("tasks")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
 }
