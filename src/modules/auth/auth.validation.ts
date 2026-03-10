@@ -27,3 +27,23 @@ export const loginSchema = z.object({
 });
 
 export type LoginDto = z.infer<typeof loginSchema>['body'];
+
+// ─── Refresh Token ───────────────────────────────────────────────
+
+export const refreshTokenSchema = z.object({
+    body: z.object({
+        refreshToken: z.string().min(1, 'Refresh token alanı boş bırakılamaz.'),
+    }),
+});
+
+export type RefreshTokenDto = z.infer<typeof refreshTokenSchema>['body'];
+
+// ─── Logout ──────────────────────────────────────────────────────
+
+export const logoutSchema = z.object({
+    body: z.object({
+        refreshToken: z.string().min(1, 'Refresh token alanı boş bırakılamaz.'),
+    }),
+});
+
+export type LogoutDto = z.infer<typeof logoutSchema>['body'];
