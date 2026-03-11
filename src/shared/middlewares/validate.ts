@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import { ZodSchema, ZodError } from 'zod';
+import { ZodObject, ZodError } from 'zod';
 
 /**
  * Zod şemasıyla gelen isteği doğrulayan middleware.
  * Schema z.object({ body, query, params }) formatında olmalıdır.
  */
-export const validate = (schema: ZodSchema) => {
+export const validate = (schema: ZodObject) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
             await schema.parseAsync({

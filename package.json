@@ -8,9 +8,8 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:up": "docker-compose up -d",
-    "db:down": "docker-compose down",
-    "db:seed": "tsx prisma/seed.ts"
-},
+    "db:down": "docker-compose down"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/PlanoraWeb/PLANORA-BACKEND.git"
