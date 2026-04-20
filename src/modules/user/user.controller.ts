@@ -19,6 +19,16 @@ export class UserController {
         const user = await userService.getProfile(req.user!.id);
         sendResponse({ res, data: user });
     }
+
+    async updateProfile(req: AuthRequest, res: Response) {
+        const user = await userService.updateProfile(req.user!.id, req.body);
+        sendResponse({ res, data: user, message: 'Profil başarıyla güncellendi' });
+    }
+
+    async updatePassword(req: AuthRequest, res: Response) {
+        await userService.updatePassword(req.user!.id, req.body);
+        sendResponse({ res, data: null, message: 'Şifreniz başarıyla değiştirildi' });
+    }
 }
 
 export const userController = new UserController();

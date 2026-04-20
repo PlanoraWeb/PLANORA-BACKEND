@@ -3,6 +3,7 @@ import { Response } from 'express';
 interface ResponseOptions<T> {
     res: Response;
     statusCode?: number;
+    message?: string;
     data?: T;
     meta?: Record<string, any>;
 }
@@ -11,7 +12,7 @@ interface ResponseOptions<T> {
  * Standart başarılı yanıt helper'ı.
  * Tüm controller'lar bu fonksiyonu kullanarak tutarlı JSON formatı döner.
  */
-export const sendResponse = <T>({ res, statusCode = 200, data, meta }: ResponseOptions<T>) => {
+export const sendResponse = <T>({ res, statusCode = 200, message, data, meta }: ResponseOptions<T>) => {
     const response: Record<string, any> = {
         success: true,
         data: data ?? null,
@@ -20,6 +21,10 @@ export const sendResponse = <T>({ res, statusCode = 200, data, meta }: ResponseO
             ...meta,
         },
     };
+
+    if (message) {
+        response.message = message;
+    }
 
     return res.status(statusCode).json(response);
 };
