@@ -10,7 +10,7 @@ export const createTaskSchema = z.object({
         type: z.enum(['BUG', 'TASK', 'STORY']).default('TASK'),
         statusId: z.string().uuid('Geçerli bir durum ID giriniz'),
         assigneeId: z.string().uuid('Geçerli bir kullanıcı ID giriniz').optional(),
-        dueDate: z.string().datetime().optional(),
+        dueDate: z.string().datetime({ message: 'Geçerli bir tarih giriniz' }).optional(),
     }),
 });
 
@@ -20,29 +20,28 @@ export type CreateTaskDto = z.infer<typeof createTaskSchema>['body'];
 
 export const updateTaskSchema = z.object({
     body: z.object({
-        title: z.string().min(1).optional(),
+        title: z.string().min(1, 'Görev başlığı boş olamaz').optional(),
         description: z.string().optional(),
         priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
         type: z.enum(['BUG', 'TASK', 'STORY']).optional(),
-        statusId: z.string().uuid().optional(),
-        assigneeId: z.string().uuid().nullable().optional(),
-        dueDate: z.string().datetime().nullable().optional(),
+        statusId: z.string().uuid('Geçerli bir durum ID giriniz').optional(),
+        assigneeId: z.string().uuid('Geçerli bir kullanıcı ID giriniz').nullable().optional(),
+        dueDate: z.string().datetime({ message: 'Geçerli bir tarih giriniz' }).nullable().optional(),
     }),
 });
 
 export type UpdateTaskDto = z.infer<typeof updateTaskSchema>['body'];
 
 // ─── Task Durum Güncelleme (Kanban D&D) ─────────────────────────
+// statusId kullanılır — sabit enum değil, dinamik TaskStatus kaydına referans verir
 
 export const updateTaskStatusSchema = z.object({
     params: z.object({
-        id: z.string().uuid('Geçersiz görev kimliği.'),
+        id: z.string().uuid('Geçersiz görev kimliği'),
     }),
     body: z.object({
-        status: z.enum(['TODO', 'IN_PROGRESS', 'DONE'], {
-            error: 'Durum yalnızca TODO, IN_PROGRESS veya DONE olabilir.',
-        }),
-        newOrder: z.number().int().nonnegative('Sıralama değeri negatif olamaz.'),
+        statusId: z.string().uuid('Geçerli bir durum ID giriniz'),
+        newOrder: z.number().int().nonnegative('Sıralama değeri negatif olamaz'),
     }),
 });
 
