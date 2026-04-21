@@ -79,20 +79,19 @@ export class TaskService {
     async changeStatus(id: string, data: UpdateTaskStatusDto) {
         await this.findById(id);
 
-        // Status name'den statusId'yi bul (görevin ait olduğu projede)
-        const task = await prisma.task.findUnique({ where: { id }, select: { projectId: true } });
-        const status = await prisma.taskStatus.findFirst({
-            where: { projectId: task!.projectId, name: data.status },
+        // statusId'nin gerçekten var olduğunu doğrula
+        const statusExists = await prisma.taskStatus.findUnique({
+            where: { id: data.statusId },
         });
 
-        if (!status) {
-            throw new AppError('Belirtilen durum bu projede bulunamadı', 404, 'NOT_FOUND');
+        if (!statusExists) {
+            throw new AppError('Belirtilen görev durumu bulunamadı', 404, 'NOT_FOUND');
         }
 
         return prisma.task.update({
             where: { id },
             data: {
-                statusId: status.id,
+                statusId: data.statusId,
                 order: data.newOrder,
             },
             include: {
@@ -105,10 +104,13 @@ export class TaskService {
 
     async assignUser(id: string, assigneeId: string | null) {
         await this.findById(id);
+
         return prisma.task.update({
             where: { id },
             data: { assigneeId },
             include: {
+                status: true,
+                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
                 assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
         });
