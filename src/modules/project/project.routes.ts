@@ -15,9 +15,12 @@ router.get('/', asyncHandler(projectController.getAll as any));
 // Proje detayı — sadece üyeler
 router.get('/:id', authorizeProjectMember() as any, asyncHandler(projectController.getById as any));
 
-// Güncelleme ve silme — sadece System Admin veya proje sahibi
+// Güncelleme — proje üyeleri
 router.put('/:id', authorizeProjectMember() as any, validate(updateProjectSchema), asyncHandler(projectController.update as any));
-router.delete('/:id', authorize('System Admin') as any, asyncHandler(projectController.delete as any));
+router.patch('/:id', authorizeProjectMember() as any, validate(updateProjectSchema), asyncHandler(projectController.update as any));
+
+// Silme — proje üyeleri (proje sahibi veya admin)
+router.delete('/:id', authorizeProjectMember() as any, asyncHandler(projectController.delete as any));
 
 // Üye yönetimi — sadece System Admin
 router.post('/:id/members', authorize('System Admin') as any, validate(addProjectMemberSchema), asyncHandler(projectController.addMember as any));
