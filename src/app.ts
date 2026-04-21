@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -9,6 +9,7 @@ import { userRoutes } from './modules/user/user.routes';
 import { projectRoutes } from './modules/project/project.routes';
 import { taskRoutes } from './modules/task/task.routes';
 import { taskStatusRoutes } from './modules/task-status/task-status.routes';
+import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
 
 // ─── Shared Middlewares ───────────────────────────────────────────
 import { errorHandler } from './shared/middlewares/errorHandler';
@@ -17,7 +18,24 @@ const app = express();
 
 // ─── Global Middlewares ───────────────────────────────────────────
 app.use(helmet());
-app.use(cors());
+
+// ─── CORS Yapılandırması ──────────────────────────────────────────
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://planora-frontend-rho.vercel.app',
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS Error: Origin not allowed'));
+        }
+    },
+    credentials: true,
+}));
+
 app.use(express.json());
 app.use(morgan('dev'));
 
@@ -25,29 +43,24 @@ app.use(morgan('dev'));
 app.get('/api/health', (_req: Request, res: Response) => {
     res.status(200).json({
         success: true,
-        data: {
-            status: 'OK',
-            message: 'Planora API is running',
-        },
+        data: { status: 'OK', message: 'Planora API is running' },
         meta: { timestamp: new Date().toISOString() },
     });
 });
 
-// ─── API Routes v1 (Modüler Monolitik) ───────────────────────────
+// ─── API Routes v1 ───────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/task-statuses', taskStatusRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
     res.status(404).json({
         success: false,
-        error: {
-            code: 'NOT_FOUND',
-            message: 'İstenen kaynak bulunamadı',
-        },
+        error: { code: 'NOT_FOUND', message: 'İstenen kaynak bulunamadı' },
     });
 });
 

@@ -39,6 +39,12 @@ export class TaskController {
         const task = await taskService.assignUser(getParam(req, 'id'), req.body.assigneeId);
         sendResponse({ res, data: task });
     }
+
+    // Giriş yapan kullanıcıya atanmış görevler (Tasks.jsx için)
+    async getMyTasks(req: AuthRequest, res: Response) {
+        const tasks = await taskService.findByAssignee(req.user!.id);
+        sendResponse({ res, data: tasks });
+    }
 }
 
 export const taskController = new TaskController();

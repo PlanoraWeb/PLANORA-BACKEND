@@ -79,7 +79,6 @@ export class TaskService {
     async changeStatus(id: string, data: UpdateTaskStatusDto) {
         await this.findById(id);
 
-        // statusId'nin gerçekten var olduğunu doğrula
         const statusExists = await prisma.taskStatus.findUnique({
             where: { id: data.statusId },
         });
@@ -113,6 +112,19 @@ export class TaskService {
                 reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
                 assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
             },
+        });
+    }
+
+    // Kullanıcıya atanmış görevler (Tasks.jsx / GET /tasks/me için)
+    async findByAssignee(userId: string) {
+        return prisma.task.findMany({
+            where: { assigneeId: userId },
+            include: {
+                status: true,
+                project: { select: { id: true, projectName: true } },
+                reporter: { select: { id: true, firstName: true, lastName: true } },
+            },
+            orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
         });
     }
 }

@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client/index';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const adapter = new PrismaPg({
-    connectionString: process.env.DATABASE_URL!,
-});
-
+// Prisma 7: Bağlantı URL'si schema.prisma yerine adapter üzerinden verilir.
+const adapter = new PrismaPg(process.env.DATABASE_URL!);
 const prisma = new PrismaClient({ adapter });
 
 export default prisma;
