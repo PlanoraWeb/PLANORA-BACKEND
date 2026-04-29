@@ -6,10 +6,9 @@ import { AppError } from '../../shared/utils/AppError';
 import { RegisterDto, LoginDto, RefreshTokenDto, LogoutDto } from './auth.validation';
 
 export class AuthService {
-    // ─── Register ────────────────────────────────────────────────
-
+    // ─── Kayıt Ol ────────────────────────────────────────────────
     async register(data: RegisterDto) {
-        const normalizedEmail = data.email.trim().toLowerCase(); // PLAN-117
+        const normalizedEmail = data.email.trim().toLowerCase();
 
         const existingUser = await prisma.user.findUnique({
             where: { email: normalizedEmail },
@@ -24,7 +23,7 @@ export class AuthService {
         });
 
         if (!memberRole) {
-            throw new AppError('Varsayılan rol bulunamadı. Seed çalıştırın.', 500, 'INTERNAL_ERROR');
+            throw new AppError('Varsayılan rol bulunamadı. Lütfen seed verilerini kontrol edin.', 500, 'INTERNAL_ERROR');
         }
 
         const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -57,10 +56,9 @@ export class AuthService {
         };
     }
 
-    // ─── Login ───────────────────────────────────────────────────
-
+    // ─── Giriş Yap ───────────────────────────────────────────────
     async login(data: LoginDto) {
-        const normalizedEmail = data.email.trim().toLowerCase(); // PLAN-117
+        const normalizedEmail = data.email.trim().toLowerCase();
 
         const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
@@ -68,7 +66,8 @@ export class AuthService {
         });
 
         if (!user) {
-            await bcrypt.hash(data.password, 12); // timing attack önlemi
+            // Şifreyi her halükarda hash'leyerek kullanıcı varlık bilgisini gizliyoruz (Timing Attack Prevention)
+            await bcrypt.hash(data.password, 12);
             throw new AppError('E-posta veya şifre hatalı', 401, 'UNAUTHORIZED');
         }
 
@@ -101,8 +100,7 @@ export class AuthService {
         };
     }
 
-    // ─── Refresh ─────────────────────────────────────────────────
-
+    // ─── Token Yenileme (Rotation Dahil) ────────────────────────
     async refresh(data: RefreshTokenDto) {
         const storedToken = await prisma.refreshToken.findUnique({
             where: { token: data.refreshToken },
@@ -113,9 +111,11 @@ export class AuthService {
             throw new AppError('Geçersiz refresh token', 401, 'UNAUTHORIZED');
         }
 
+        // Token Reuse Detection: Eğer iptal edilmiş bir token ile refresh denenirse
+        // güvenlik gereği kullanıcının tüm tokenlarını iptal ediyoruz.
         if (storedToken.revokedAt) {
             await this.revokeAllUserTokens(storedToken.userId);
-            throw new AppError('Token iptal edilmiş. Lütfen tekrar giriş yapın.', 401, 'TOKEN_REVOKED');
+            throw new AppError('Güvenlik ihlali: Token daha önce kullanılmış. Lütfen tekrar giriş yapın.', 401, 'TOKEN_REVOKED');
         }
 
         if (storedToken.expiresAt < new Date()) {
@@ -125,11 +125,12 @@ export class AuthService {
         try {
             jwt.verify(data.refreshToken, env.JWT_REFRESH_SECRET);
         } catch {
-            throw new AppError('Geçersiz refresh token imzası', 401, 'UNAUTHORIZED');
+            throw new AppError('Geçersiz token imzası', 401, 'UNAUTHORIZED');
         }
 
         const user = storedToken.user;
 
+        // Eski token'ı iptal et (Rotate)
         await prisma.refreshToken.update({
             where: { id: storedToken.id },
             data: { revokedAt: new Date() },
@@ -152,8 +153,7 @@ export class AuthService {
         };
     }
 
-    // ─── Logout (mevcut cihaz) ────────────────────────────────────
-
+    // ─── Çıkış Yap (Mevcut Cihaz) ──────────────────────────────────
     async logout(data: LogoutDto) {
         const storedToken = await prisma.refreshToken.findUnique({
             where: { token: data.refreshToken },
@@ -169,8 +169,7 @@ export class AuthService {
         });
     }
 
-    // ─── Logout All (tüm cihazlar) ───────────────────────────────
-
+    // ─── Tüm Cihazlardan Çıkış ────────────────────────────────────
     async logoutAll(userId: string) {
         await this.revokeAllUserTokens(userId);
     }
@@ -191,6 +190,8 @@ export class AuthService {
             h: 60 * 60 * 1000,
             d: 24 * 60 * 60 * 1000,
         };
+        
+        // Expiry string'i (örn: "7d") parse edip Date objesine çeviriyoruz
         const match = expiryStr.match(/^(\d+)([smhd])$/);
         const expiresAt = match
             ? new Date(Date.now() + parseInt(match[1]) * (multipliers[match[2]] ?? 0))

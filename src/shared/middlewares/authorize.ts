@@ -4,7 +4,6 @@ import { AppError } from '../utils/AppError';
 import { AuthRequest } from '../types/AuthRequest';
 
 // ─── Sistem Rol Kontrolü ──────────────────────────────────────────
-// Kullanım: authorize('System Admin', 'Project Admin')
 export const authorize = (...allowedRoles: string[]) => {
     return async (req: AuthRequest, _res: Response, next: NextFunction) => {
         if (!req.user) {
@@ -24,18 +23,20 @@ export const authorize = (...allowedRoles: string[]) => {
 };
 
 // ─── Proje Üyelik Kontrolü ────────────────────────────────────────
-// Kullanım: authorizeProjectMember() — route'da :projectId veya :id param'ı olmalı
 export const authorizeProjectMember = () => {
     return async (req: AuthRequest, _res: Response, next: NextFunction) => {
         if (!req.user) {
             return next(new AppError('Yetkilendirme gerekli', 401));
         }
 
-        const projectId = req.params.projectId ?? req.params.id;
+        // Değeri alıp string olduğunu garanti ediyoruz
+        const rawProjectId = req.params.projectId ?? req.params.id;
 
-        if (!projectId) {
-            return next(new AppError('Proje kimliği bulunamadı', 400));
+        if (!rawProjectId || typeof rawProjectId !== 'string') {
+            return next(new AppError('Geçerli bir proje kimliği bulunamadı', 400));
         }
+
+        const projectId = rawProjectId; // Artık kesinlikle string
 
         const membership = await prisma.projectMember.findUnique({
             where: {

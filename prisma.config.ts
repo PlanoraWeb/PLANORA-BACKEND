@@ -1,12 +1,16 @@
 import 'dotenv/config';
-import path from 'node:path';
-import { defineConfig, env } from 'prisma/config';
+import { defineConfig } from 'prisma/config';
 
 export default defineConfig({
-    schema: path.join(__dirname, 'prisma', 'schema.prisma'),
+    // path.join ve __dirname yerine direkt string yol kullanmak daha hatasızdır
+    schema: './prisma/schema.prisma',
+    
     datasource: {
-        url: env('DATABASE_URL'),
+        url: process.env.DATABASE_URL,
     },
+    
+    // directUrl hatası alıyorsan, bu genellikle migration komutları 
+    // sırasında .env'den otomatik okunur. Buradan çıkarabiliriz.
     migrations: {
         seed: 'tsx ./prisma/seed.ts',
     },

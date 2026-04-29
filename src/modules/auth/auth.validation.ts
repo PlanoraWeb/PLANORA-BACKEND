@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 // ─── Register ────────────────────────────────────────────────────
-
 export const registerSchema = z.object({
     body: z.object({
         email: z.string().email('Geçersiz e-posta formatı.'),
@@ -18,7 +17,6 @@ export const registerSchema = z.object({
 export type RegisterDto = z.infer<typeof registerSchema>['body'];
 
 // ─── Login ───────────────────────────────────────────────────────
-
 export const loginSchema = z.object({
     body: z.object({
         email: z.string().email('Geçersiz e-posta formatı.'),
@@ -27,3 +25,22 @@ export const loginSchema = z.object({
 });
 
 export type LoginDto = z.infer<typeof loginSchema>['body'];
+
+// ─── Refresh Token ───────────────────────────────────────────────
+export const refreshTokenSchema = z.object({
+    body: z.object({
+        // .min(1) hem zorunlu kılar hem de boş stringi engeller
+        refreshToken: z.string().min(1, 'Refresh token zorunludur.'),
+    }),
+});
+
+export type RefreshTokenDto = z.infer<typeof refreshTokenSchema>['body'];
+
+// ─── Logout ──────────────────────────────────────────────────────
+export const logoutSchema = z.object({
+    body: z.object({
+        refreshToken: z.string().min(1, 'Refresh token zorunludur.'),
+    }),
+});
+
+export type LogoutDto = z.infer<typeof logoutSchema>['body'];

@@ -17,7 +17,24 @@ const app = express();
 
 // ─── Global Middlewares ───────────────────────────────────────────
 app.use(helmet());
-app.use(cors());
+
+// CORS Yapılandırması: Sadece belirlenen domainlere izin verir
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://planora-frontend-rho.vercel.app'
+];
+
+app.use(cors({
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS Error: Origin not allowed'));
+        }
+    },
+    credentials: true
+}));
+
 app.use(express.json());
 app.use(morgan('dev'));
 
