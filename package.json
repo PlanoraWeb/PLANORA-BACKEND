@@ -22,6 +22,9 @@
     "url": "https://github.com/PlanoraWeb/PLANORA-BACKEND/issues"
   },
   "homepage": "https://github.com/PlanoraWeb/PLANORA-BACKEND#readme",
+  "engines": {
+    "node": "20.x"
+  },
   "devDependencies": {
     "eslint": "^10.0.3",
     "nodemon": "^3.1.14",
