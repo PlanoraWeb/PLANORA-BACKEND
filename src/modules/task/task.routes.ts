@@ -7,6 +7,9 @@ const router = Router();
 
 router.use(authenticate as any);
 
+// Kullanıcının kendi görevleri — /:id'den ÖNCE tanımlanmalı (route çakışmasını önle)
+router.get('/me', asyncHandler(taskController.getMyTasks as any));
+
 // Proje bazlı görevler
 router.post('/project/:projectId', validate(createTaskSchema), asyncHandler(taskController.create as any));
 router.get('/project/:projectId', asyncHandler(taskController.getAllByProject as any));
