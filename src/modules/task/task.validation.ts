@@ -58,6 +58,10 @@ export const taskFilterSchema = z.object({
         assigneeId: z.string().uuid('Geçerli bir kullanıcı ID giriniz').optional(),
         reporterId: z.string().uuid('Geçerli bir kullanıcı ID giriniz').optional(),
 
+        // Sprint filtresi (backlog için)
+        sprintId: z.string().uuid('Geçerli bir sprint ID giriniz').optional(),
+        backlog: z.enum(['true', 'false']).optional(),
+
         // Arama (title + description)
         search: z.string().optional(),
 

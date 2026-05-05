@@ -35,7 +35,6 @@ export class AuthController {
     // Tüm Cihazlardan Çıkış
     async logoutAll(req: Request, res: Response) {
         const userId = (req as any).user.id;
-        const userId = (req as any).user.id; // Auth middleware'inden gelen user id
         await authService.logoutAll(userId);
         sendResponse({ res, statusCode: 200, message: 'Tüm cihazlardan çıkış yapıldı.' });
     }

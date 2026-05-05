@@ -10,6 +10,8 @@ import { projectRoutes } from './modules/project/project.routes';
 import { taskRoutes } from './modules/task/task.routes';
 import { taskStatusRoutes } from './modules/task-status/task-status.routes';
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
+import { sprintRoutes } from './modules/sprint/sprint.routes';
+import { notificationRoutes } from './modules/notification/notification.routes';
 
 // ─── Shared Middlewares ───────────────────────────────────────────
 import { errorHandler } from './shared/middlewares/errorHandler';
@@ -23,10 +25,6 @@ app.use(helmet());
 const allowedOrigins = [
     'http://localhost:5173',
     'https://planora-frontend-rho.vercel.app',
-// CORS Yapılandırması: Sadece belirlenen domainlere izin verir
-const allowedOrigins = [
-    'http://localhost:5173',
-    'https://planora-frontend-rho.vercel.app'
 ];
 
 app.use(cors({
@@ -38,7 +36,6 @@ app.use(cors({
         }
     },
     credentials: true,
-    credentials: true
 }));
 
 app.use(express.json());
@@ -65,6 +62,8 @@ app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/tasks', taskRoutes);
 app.use('/api/v1/task-statuses', taskStatusRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/sprints', sprintRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {

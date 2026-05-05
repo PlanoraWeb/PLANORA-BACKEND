@@ -26,6 +26,13 @@ function buildFilterWhere(filters: TaskFilterDto) {
     if (filters.assigneeId) where.assigneeId = filters.assigneeId;
     if (filters.reporterId) where.reporterId = filters.reporterId;
 
+    // Sprint filtresi (backlog desteği)
+    if (filters.backlog === 'true') {
+        where.sprintId = null; // Sprint'e atanmamış görevler
+    } else if (filters.sprintId) {
+        where.sprintId = filters.sprintId;
+    }
+
     // Tarih aralığı
     if (filters.dueDateFrom || filters.dueDateTo) {
         where.dueDate = {};
