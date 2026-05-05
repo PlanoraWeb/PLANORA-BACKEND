@@ -22,7 +22,18 @@
     "url": "https://github.com/PlanoraWeb/PLANORA-BACKEND/issues"
   },
   "homepage": "https://github.com/PlanoraWeb/PLANORA-BACKEND#readme",
+  "engines": {
+    "node": "20.x"
+  },
   "devDependencies": {
+    "eslint": "^10.0.3",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.4.2",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -31,17 +42,8 @@
     "@types/morgan": "^1.9.10",
     "@types/node": "^25.3.5",
     "@types/node-cron": "^3.0.11",
+    "@types/node": "^25.6.0",
     "@types/pg": "^8.18.0",
-    "eslint": "^10.0.3",
-    "nodemon": "^3.1.14",
-    "prettier": "^3.8.1",
-    "prisma": "^7.4.2",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@prisma/adapter-pg": "^7.4.2",
-    "@prisma/client": "^7.4.2",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
@@ -52,6 +54,8 @@
     "morgan": "^1.10.1",
     "node-cron": "^4.2.1",
     "pg": "^8.20.0",
+    "prisma": "^7.4.2",
+    "typescript": "^5.9.3",
     "zod": "^4.3.6"
   }
 }

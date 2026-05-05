@@ -23,6 +23,10 @@ app.use(helmet());
 const allowedOrigins = [
     'http://localhost:5173',
     'https://planora-frontend-rho.vercel.app',
+// CORS Yapılandırması: Sadece belirlenen domainlere izin verir
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://planora-frontend-rho.vercel.app'
 ];
 
 app.use(cors({
@@ -34,6 +38,7 @@ app.use(cors({
         }
     },
     credentials: true,
+    credentials: true
 }));
 
 app.use(express.json());
