@@ -1,6 +1,53 @@
 import prisma from '../../shared/utils/prisma';
 import { AppError } from '../../shared/utils/AppError';
-import { CreateTaskDto, UpdateTaskDto, UpdateTaskStatusDto } from './task.validation';
+import { CreateTaskDto, UpdateTaskDto, UpdateTaskStatusDto, TaskFilterDto } from './task.validation';
+
+// ─── Ortak include objesi ────────────────────────────────────────
+const taskInclude = {
+    status: true,
+    reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+    assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
+};
+
+const taskWithProjectInclude = {
+    status: true,
+    project: { select: { id: true, projectName: true } },
+    reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
+    assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
+};
+
+// ─── Filtre where objesi oluşturucu (helper) ─────────────────────
+function buildFilterWhere(filters: TaskFilterDto) {
+    const where: any = {};
+
+    if (filters.status) where.statusId = filters.status;
+    if (filters.priority) where.priority = filters.priority;
+    if (filters.type) where.type = filters.type;
+    if (filters.assigneeId) where.assigneeId = filters.assigneeId;
+    if (filters.reporterId) where.reporterId = filters.reporterId;
+
+    // Tarih aralığı
+    if (filters.dueDateFrom || filters.dueDateTo) {
+        where.dueDate = {};
+        if (filters.dueDateFrom) where.dueDate.gte = new Date(filters.dueDateFrom);
+        if (filters.dueDateTo) where.dueDate.lte = new Date(filters.dueDateTo);
+    }
+
+    // Arama (title veya description)
+    if (filters.search) {
+        where.OR = [
+            { title: { contains: filters.search, mode: 'insensitive' } },
+            { description: { contains: filters.search, mode: 'insensitive' } },
+        ];
+    }
+
+    return where;
+}
+
+// ─── Sıralama objesi oluşturucu ──────────────────────────────────
+function buildOrderBy(filters: TaskFilterDto) {
+    return { [filters.sortBy]: filters.sortOrder };
+}
 
 export class TaskService {
     async create(projectId: string, reporterId: string, data: CreateTaskDto) {
@@ -16,35 +63,43 @@ export class TaskService {
                 assigneeId: data.assigneeId,
                 dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
             },
-            include: {
-                status: true,
-                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
-                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
-            },
+            include: taskInclude,
         });
     }
 
-    async findAllByProject(projectId: string) {
-        return prisma.task.findMany({
-            where: { projectId },
-            include: {
-                status: true,
-                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
-                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
+    async findAllByProject(projectId: string, filters: TaskFilterDto) {
+        const filterWhere = buildFilterWhere(filters);
+        const where = { projectId, ...filterWhere };
+
+        const skip = (filters.page - 1) * filters.limit;
+        const take = filters.limit;
+
+        const [tasks, total] = await prisma.$transaction([
+            prisma.task.findMany({
+                where,
+                include: taskInclude,
+                orderBy: buildOrderBy(filters),
+                skip,
+                take,
+            }),
+            prisma.task.count({ where }),
+        ]);
+
+        return {
+            tasks,
+            meta: {
+                total,
+                page: filters.page,
+                limit: filters.limit,
+                totalPages: Math.ceil(total / filters.limit),
             },
-            orderBy: [{ status: { position: 'asc' } }, { order: 'asc' }, { createdAt: 'desc' }],
-        });
+        };
     }
 
     async findById(id: string) {
         const task = await prisma.task.findUnique({
             where: { id },
-            include: {
-                status: true,
-                project: { select: { id: true, projectName: true } },
-                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
-                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
-            },
+            include: taskWithProjectInclude,
         });
 
         if (!task) {
@@ -63,11 +118,7 @@ export class TaskService {
                 ...data,
                 dueDate: data.dueDate === null ? null : data.dueDate ? new Date(data.dueDate) : undefined,
             },
-            include: {
-                status: true,
-                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
-                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
-            },
+            include: taskInclude,
         });
     }
 
@@ -93,11 +144,7 @@ export class TaskService {
                 statusId: data.statusId,
                 order: data.newOrder,
             },
-            include: {
-                status: true,
-                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
-                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
-            },
+            include: taskInclude,
         });
     }
 
@@ -107,25 +154,38 @@ export class TaskService {
         return prisma.task.update({
             where: { id },
             data: { assigneeId },
-            include: {
-                status: true,
-                reporter: { select: { id: true, firstName: true, lastName: true, email: true } },
-                assignee: { select: { id: true, firstName: true, lastName: true, email: true } },
-            },
+            include: taskInclude,
         });
     }
 
     // Kullanıcıya atanmış görevler (Tasks.jsx / GET /tasks/me için)
-    async findByAssignee(userId: string) {
-        return prisma.task.findMany({
-            where: { assigneeId: userId },
-            include: {
-                status: true,
-                project: { select: { id: true, projectName: true } },
-                reporter: { select: { id: true, firstName: true, lastName: true } },
+    async findByAssignee(userId: string, filters: TaskFilterDto) {
+        const filterWhere = buildFilterWhere(filters);
+        const where = { assigneeId: userId, ...filterWhere };
+
+        const skip = (filters.page - 1) * filters.limit;
+        const take = filters.limit;
+
+        const [tasks, total] = await prisma.$transaction([
+            prisma.task.findMany({
+                where,
+                include: taskWithProjectInclude,
+                orderBy: buildOrderBy(filters),
+                skip,
+                take,
+            }),
+            prisma.task.count({ where }),
+        ]);
+
+        return {
+            tasks,
+            meta: {
+                total,
+                page: filters.page,
+                limit: filters.limit,
+                totalPages: Math.ceil(total / filters.limit),
             },
-            orderBy: [{ priority: 'desc' }, { dueDate: 'asc' }],
-        });
+        };
     }
 }
 
