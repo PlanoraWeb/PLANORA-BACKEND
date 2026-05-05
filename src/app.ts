@@ -48,6 +48,11 @@ app.get('/api/health', (_req: Request, res: Response) => {
     });
 });
 
+// ─── Ping (Keep-alive / Cold Start) ──────────────────────────────
+app.get('/api/ping', (_req: Request, res: Response) => {
+    res.status(200).send('pong');
+});
+
 // ─── API Routes v1 ───────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
