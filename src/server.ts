@@ -8,7 +8,7 @@ prisma.$connect()
     .then(() => console.log('✅ Prisma DB bağlantısı hazır'))
     .catch((err: unknown) => console.error('❌ Prisma DB bağlantı hatası:', err));
 
-app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
     console.log(`🚀 Planora API is running on http://localhost:${env.PORT}`);
     console.log(`📌 Environment: ${env.NODE_ENV}`);
 
@@ -25,3 +25,8 @@ app.listen(env.PORT, () => {
         console.log('🏓 Self-ping cron aktif (her 14 dk)');
     }
 });
+
+server.on('error', (err: Error) => {
+    console.error('❌ Server error:', err.message);
+});
+

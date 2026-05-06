@@ -29,11 +29,15 @@ const allowedOrigins = [
 
 app.use(cors({
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('CORS Error: Origin not allowed'));
+        // Origin yoksa (Postman, curl, vb.) izin ver
+        if (!origin) return callback(null, true);
+        // Production origin listesi
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // Development: tüm localhost originlerine izin ver
+        if (process.env.NODE_ENV !== 'production' && origin.match(/^http:\/\/localhost:\d+$/)) {
+            return callback(null, true);
         }
+        callback(new Error('CORS Error: Origin not allowed'));
     },
     credentials: true,
 }));
