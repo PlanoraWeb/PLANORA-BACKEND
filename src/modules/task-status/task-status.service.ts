@@ -14,11 +14,33 @@ export class TaskStatusService {
     }
 
     async findAllByProject(projectId: string) {
-        return prisma.taskStatus.findMany({
+        const statuses = await prisma.taskStatus.findMany({
             where: { projectId },
             include: { _count: { select: { tasks: true } } },
             orderBy: { position: 'asc' },
         });
+
+        // Proje için hiç kolon yoksa (eski projeler için migration) varsayılanları oluştur
+        if (statuses.length === 0) {
+            const defaultStatuses = [
+                { name: 'TODO', position: 0, isDefault: true },
+                { name: 'IN_PROGRESS', position: 1, isDefault: false },
+                { name: 'DONE', position: 2, isDefault: false },
+            ];
+
+            await prisma.taskStatus.createMany({
+                data: defaultStatuses.map((s) => ({ ...s, projectId })),
+                skipDuplicates: true,
+            });
+
+            return prisma.taskStatus.findMany({
+                where: { projectId },
+                include: { _count: { select: { tasks: true } } },
+                orderBy: { position: 'asc' },
+            });
+        }
+
+        return statuses;
     }
 
     async findById(id: string) {

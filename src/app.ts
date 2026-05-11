@@ -12,6 +12,7 @@ import { taskStatusRoutes } from './modules/task-status/task-status.routes';
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes';
 import { sprintRoutes } from './modules/sprint/sprint.routes';
 import { notificationRoutes } from './modules/notification/notification.routes';
+import { chatRoutes } from './modules/chat/chat.routes';
 
 // ─── Shared Middlewares ───────────────────────────────────────────
 import { errorHandler } from './shared/middlewares/errorHandler';
@@ -68,6 +69,7 @@ app.use('/api/v1/task-statuses', taskStatusRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/sprints', sprintRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/chat', chatRoutes);
 
 // ─── 404 Handler ──────────────────────────────────────────────────
 app.use((_req: Request, res: Response) => {
