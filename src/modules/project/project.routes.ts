@@ -14,6 +14,7 @@ router.get('/', asyncHandler(projectController.getAll as any));
 
 // Proje detayı — sadece üyeler
 router.get('/:id', authorizeProjectMember() as any, asyncHandler(projectController.getById as any));
+router.get('/:id/insights', authorizeProjectMember() as any, asyncHandler(projectController.getInsights as any));
 
 // Güncelleme — hem PATCH (frontend) hem PUT (geriye dönük uyumluluk)
 router.patch('/:id', authorizeProjectMember() as any, validate(updateProjectSchema), asyncHandler(projectController.update as any));

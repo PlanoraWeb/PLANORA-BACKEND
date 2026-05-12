@@ -20,6 +20,11 @@ export class ProjectController {
         sendResponse({ res, data: project });
     }
 
+    async getInsights(req: AuthRequest, res: Response) {
+        const insights = await projectService.getInsights(getParam(req, 'id'));
+        sendResponse({ res, data: insights });
+    }
+
     async update(req: AuthRequest, res: Response) {
         const project = await projectService.update(getParam(req, 'id'), req.body);
         sendResponse({ res, data: project });
