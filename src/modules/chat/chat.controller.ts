@@ -6,7 +6,7 @@ import { sendResponse } from '../../shared/utils/sendResponse';
 export class ChatController {
     async sendMessage(req: AuthRequest, res: Response) {
         const { message } = req.body as { message: string };
-        const reply = await chatService.chat(message);
+        const reply = await chatService.chat(req.user!.id, message);
         sendResponse({ res, data: { reply } });
     }
 }

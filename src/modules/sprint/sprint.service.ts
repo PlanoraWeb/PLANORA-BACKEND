@@ -1,6 +1,7 @@
 import prisma from '../../shared/utils/prisma';
 import { AppError } from '../../shared/utils/AppError';
 import { CreateSprintDto, UpdateSprintDto, SprintFilterDto } from './sprint.validation';
+import { notificationService } from '../notification/notification.service';
 
 const sprintInclude = {
     tasks: {
@@ -82,13 +83,12 @@ export class SprintService {
     }
 
     async update(id: string, data: UpdateSprintDto) {
-        await this.findById(id);
+        const existingSprint = await this.findById(id);
 
         // Eğer ACTIVE'e geçiliyorsa, aynı projede başka aktif sprint var mı kontrol et
         if (data.status === 'ACTIVE') {
-            const sprint = await this.findById(id);
             const existingActive = await prisma.sprint.findFirst({
-                where: { projectId: sprint.projectId, status: 'ACTIVE', id: { not: id } },
+                where: { projectId: existingSprint.projectId, status: 'ACTIVE', id: { not: id } },
             });
 
             if (existingActive) {
@@ -100,7 +100,7 @@ export class SprintService {
             }
         }
 
-        return prisma.sprint.update({
+        const sprint = await prisma.sprint.update({
             where: { id },
             data: {
                 ...data,
@@ -109,6 +109,38 @@ export class SprintService {
             },
             include: sprintInclude,
         });
+
+        if (data.status && data.status !== existingSprint.status) {
+            const projectMembers = await prisma.projectMember.findMany({
+                where: { projectId: sprint.projectId },
+                select: { userId: true },
+            });
+
+            const notificationType =
+                data.status === 'ACTIVE' ? 'SPRINT_STARTED' : data.status === 'COMPLETED' ? 'SPRINT_COMPLETED' : null;
+
+            if (notificationType && projectMembers.length > 0) {
+                await notificationService
+                    .createMany(
+                        projectMembers.map((member) => ({
+                            type: notificationType,
+                            title: data.status === 'ACTIVE' ? 'Sprint started' : 'Sprint completed',
+                            message:
+                                data.status === 'ACTIVE'
+                                    ? `${sprint.name} is now active.`
+                                    : `${sprint.name} was completed.`,
+                            userId: member.userId,
+                            metadata: {
+                                sprintId: sprint.id,
+                                projectId: sprint.projectId,
+                            },
+                        })),
+                    )
+                    .catch(() => null);
+            }
+        }
+
+        return sprint;
     }
 
     async delete(id: string) {

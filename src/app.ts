@@ -35,7 +35,10 @@ app.use(cors({
         // Production origin listesi
         if (allowedOrigins.includes(origin)) return callback(null, true);
         // Development: tüm localhost originlerine izin ver
-        if (process.env.NODE_ENV !== 'production' && origin.match(/^http:\/\/localhost:\d+$/)) {
+        if (
+            process.env.NODE_ENV !== 'production' &&
+            (origin.match(/^http:\/\/localhost:\d+$/) || origin.match(/^http:\/\/127\.0\.0\.1:\d+$/))
+        ) {
             return callback(null, true);
         }
         callback(new Error('CORS Error: Origin not allowed'));
